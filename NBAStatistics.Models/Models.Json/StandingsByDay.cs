@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NBA_Stats
+namespace NBAStatistics.Models.Models.Json
 {
     // name: EastConfStandingsByDay or WestConfStandingsByDay
     public class StandingsByDay
