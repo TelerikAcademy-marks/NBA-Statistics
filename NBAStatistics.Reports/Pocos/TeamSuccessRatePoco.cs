@@ -12,6 +12,12 @@
 
         public double SuccessRate { get; set; }
 
-        public byte HomeRecord { get; set; }
+        public byte HomeRecordWins { get; set; }
+
+        public byte HomeRecordLosses { get; set; }
+
+        public byte RoadRecordWins { get; set; }
+
+        public byte RoadRecordLosses { get; set; }
     }
 }
