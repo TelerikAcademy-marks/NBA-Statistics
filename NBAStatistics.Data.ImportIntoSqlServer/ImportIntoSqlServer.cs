@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Entity;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -47,7 +46,7 @@ namespace NBAStatistics.Data.ImportIntoSqlServer
 
                     // If the directory already exists, this method does not create a new directory
                     DirectoryInfo di = Directory.CreateDirectory(directoryWithReports);
-                    CultureInfo cultureProvider = new CultureInfo("bg-BG");
+                    CultureInfo cultureProvider = new CultureInfo("en-US");
                     using (ZipArchive archive = ZipFile.OpenRead(zipPath))
                     {
                         foreach (ZipArchiveEntry entry in archive.Entries)
@@ -55,7 +54,7 @@ namespace NBAStatistics.Data.ImportIntoSqlServer
                             var directoryName = entry.FullName.Substring(0, 11);
                             var dateOfTheReport = DateTime.ParseExact(
                                 directoryName,
-                                "d-MMM-yyyy",
+                                "dd-MMM-yyyy",
                                 cultureProvider);
 
                             var xlsFileName = entry.FullName.Substring(12);
@@ -138,12 +137,18 @@ namespace NBAStatistics.Data.ImportIntoSqlServer
                                                     Wins = wins,
                                                     Loses = losses,
                                                     SuccessRate = Math.Round(winningsPercentage, 2),
-                                                    HomeRecord = (byte)homeRecord.Split(new char[] { '-' }, StringSplitOptions.RemoveEmptyEntries)
+                                                    HomeRecordWins = (byte)homeRecord.Split(new char[] { '-' }, StringSplitOptions.RemoveEmptyEntries)
                                                         .Select(int.Parse)
                                                         .ToArray()[0],
-                                                    RoadRecord = (byte)roadRecord.Split(new char[] { '-' }, StringSplitOptions.RemoveEmptyEntries)
+                                                    HomeRecordLosses = (byte)homeRecord.Split(new char[] { '-' }, StringSplitOptions.RemoveEmptyEntries)
                                                         .Select(int.Parse)
-                                                        .ToArray()[0]
+                                                        .ToArray()[1],
+                                                    RoadRecordWins = (byte)roadRecord.Split(new char[] { '-' }, StringSplitOptions.RemoveEmptyEntries)
+                                                        .Select(int.Parse)
+                                                        .ToArray()[0],
+                                                    RoadRecordLosses = (byte)roadRecord.Split(new char[] { '-' }, StringSplitOptions.RemoveEmptyEntries)
+                                                        .Select(int.Parse)
+                                                        .ToArray()[1]
                                                 });
                                             }
                                         }
@@ -267,54 +272,85 @@ namespace NBAStatistics.Data.ImportIntoSqlServer
                 dbContext.Players.Load();
                 dbContext.Teams.Load();
 
-                foreach (var player in mongoPlayers)
+                foreach (var playerMongoDB in mongoPlayers)
                 {
                     // throws an exception if there is more than 1 element in the sequence
                     var playerInDb = dbContext.Players.Local
-                            .SingleOrDefault(p => p.AdditionalInfo.PlayerId == player.PlayerId); // runs in memory
+                            .SingleOrDefault(p => p.AdditionalInfo.PlayerId == playerMongoDB.PlayerId); // runs in memory
 
                     if (playerInDb == null)
                     {
-                        var playersSeasons = new List<PlayerSeasonPointsPerGame>();
-                        foreach (var sppg in player.SeasonPointsPerGame)
+                        var player = new Player
                         {
-                            var season = sppg.Key;
-                            var pointsPerGame = sppg.Value;
-
-                            playersSeasons.Add(new PlayerSeasonPointsPerGame
-                            {
-                                PlayerId = player.PlayerId,
-                                SeasonId = season,
-                                PointsPerGame = pointsPerGame
-                            });
-                        }
-
-                        dbContext.Players.Add(new Player
-                        {
-                            FirstName = player.FirstName,
-                            LastName = player.LastName,
+                            FirstName = playerMongoDB.FirstName,
+                            LastName = playerMongoDB.LastName,
                             AdditionalInfo = new PlayerInfo
                             {
-                                PlayerId = player.PlayerId,
-                                Birthday = player.BirthDate,
-                                Height = string.IsNullOrEmpty(player.Height) ? null : ConvertHeightFromFeetsInchesToCentimeters(player.Height),
-                                Weight = string.IsNullOrEmpty(player.Weight) ? null : PoundsToKilogram(player.Weight)
+                                PlayerId = playerMongoDB.PlayerId,
+                                Birthday = playerMongoDB.BirthDate,
+                                Height = string.IsNullOrEmpty(playerMongoDB.Height) ? null : ConvertHeightFromFeetsInchesToCentimeters(playerMongoDB.Height),
+                                Weight = string.IsNullOrEmpty(playerMongoDB.Weight) ? null : PoundsToKilogram(playerMongoDB.Weight)
                             },
-                            School = string.IsNullOrEmpty(player.School) ? null : new School
+                            School = string.IsNullOrEmpty(playerMongoDB.School) ? null : new School
                             {
-                                Name = player.School
+                                Name = playerMongoDB.School
                             },
-                            Country = string.IsNullOrEmpty(player.Country) ?
+                            Country = string.IsNullOrEmpty(playerMongoDB.Country) ?
                                 new Country { Name = "NoName" } :
-                                    string.IsNullOrEmpty(player.Country.Trim()) ?
+                                    string.IsNullOrEmpty(playerMongoDB.Country.Trim()) ?
                                         new Country { Name = "NoName" } :
-                                        new Country { Name = player.Country },
-                            Position = player.Position,
-                            RosterStatus = player.RosterStatus,
+                                        new Country { Name = playerMongoDB.Country },
+                            Position = playerMongoDB.Position,
+                            RosterStatus = playerMongoDB.RosterStatus,
                             TeamId = dbContext.Teams.Local
-                                .Single(t => t.TeamId == player.TeamId)
+                                .Single(t => t.TeamId == playerMongoDB.TeamId)
                                 .Id
-                        });
+                        };
+
+                        dbContext.Players.Local.Add(player);
+                    }
+                }
+
+                await dbContext.SaveChangesAsync();
+
+                // Load all players and seasons from the database into the dbContext 
+                dbContext.Players.Load();
+                dbContext.Seasons.Load();
+                dbContext.PlayerSeasonPointsPerGame.Load();
+
+                foreach (var playerMongoDB in mongoPlayers)
+                {
+                    var player = dbContext.Players.Local
+                        .FirstOrDefault(p => p.AdditionalInfo.PlayerId == playerMongoDB.PlayerId);
+
+                    foreach (var sppg in playerMongoDB.SeasonPointsPerGame)
+                    {
+                        var seasonIdInMongoDB = sppg.Key;
+                        var pointsPerGameInMongoDB = sppg.Value;
+
+                        var seasonId = dbContext.Seasons.Local
+                            .FirstOrDefault(s => s.SeasonId == seasonIdInMongoDB)
+                            .Id;
+
+                        var playerSeasonPointsPerGameRecordExists = 
+                            dbContext.PlayerSeasonPointsPerGame.Local
+                                .Where(ps => ps.PlayerId == player.Id && ps.SeasonId == seasonId)
+                                .Count() > 0;
+
+                        if(playerSeasonPointsPerGameRecordExists)
+                        {
+                            // skip this record to DB
+                            continue;
+                        }
+
+                        var playerSeasonPointsPerGame = new PlayerSeasonPointsPerGame
+                        {
+                            PlayerId = player.Id,
+                            SeasonId = seasonId,
+                            PointsPerGame = pointsPerGameInMongoDB
+                        };
+
+                        player.PlayerSeasonPointsPerGame.Add(playerSeasonPointsPerGame);
                     }
                 }
 
