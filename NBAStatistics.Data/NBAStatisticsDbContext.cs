@@ -27,6 +27,10 @@ namespace NBAStatistics.Data.Repositories.SQLServer
 
         public IDbSet<Player> Players { get; set; }
 
+        public IDbSet<Season> Seasons { get; set; }
+        
+        public IDbSet<PlayerSeasonPointsPerGame> PlayerSeasonPointsPerGame { get; set; }
+
         public IDbSet<School> Schools { get; set; }
 
         public IDbSet<StandingsByDay> StandingsByDays { get; set; }
