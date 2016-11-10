@@ -50,7 +50,10 @@ namespace NBAStatistics.Reports
                         Games = standingByDay.Games,
                         Wins = standingByDay.Wins,
                         Losses = standingByDay.Loses,
-                        HomeRecord = standingByDay.HomeRecord,
+                        HomeRecordWins = standingByDay.HomeRecordWins,
+                        HomeRecordLosses = standingByDay.HomeRecordLosses,
+                        RoadRecordWins = standingByDay.RoadRecordWins,
+                        RoadRecordLosses = standingByDay.RoadRecordLosses,
                         SuccessRate = Math.Round(standingByDay.Wins / (double)standingByDay.Games, 2),
                     };
                     teamsSuccessRateByDate[date.Key].Add(teamSuccessRate);
@@ -101,8 +104,8 @@ namespace NBAStatistics.Reports
                     table.AddCell(successRateCell);
                     table.AddCell(homeRecordsCell);
 
-                    int totalGames = 0;
-                    int totalHomeRecords = 0;
+                    int totalHomeGamesPlayed = 0;
+                    int totalHomeRecordsWins = 0;
                     foreach (var standing in kvp.Value)
                     {
                         table.AddCell(standing.TeamName);
@@ -110,12 +113,12 @@ namespace NBAStatistics.Reports
                         table.AddCell(standing.Wins.ToString());
                         table.AddCell(standing.Losses.ToString());
                         table.AddCell(standing.SuccessRate.ToString());
-                        table.AddCell(standing.HomeRecord.ToString());
-                        totalGames += standing.Games;
-                        totalHomeRecords += standing.HomeRecord;
+                        table.AddCell(standing.HomeRecordWins.ToString() + "-" + standing.HomeRecordLosses.ToString());
+                        totalHomeGamesPlayed += standing.HomeRecordWins + standing.HomeRecordLosses;
+                        totalHomeRecordsWins += standing.HomeRecordWins;
                     }
 
-                    double averageSuccessAsHosts = Math.Round(totalHomeRecords / (double)totalGames, 2);
+                    double averageSuccessAsHosts = Math.Round(totalHomeRecordsWins / (double)totalHomeGamesPlayed, 2);
                     Font font = FontFactory.GetFont(PdfFont, 12.0f, Font.BOLD);
                     PdfPCell averageSuccessAsHostsCell =
                         new PdfPCell(
