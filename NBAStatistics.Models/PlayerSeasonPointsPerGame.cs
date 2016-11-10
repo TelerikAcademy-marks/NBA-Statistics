@@ -11,7 +11,7 @@ namespace NBAStatistics.Models
         public virtual Player Player { get; set; }
 
         [Key, Column(Order = 1)]
-        public string SeasonId { get; set; }
+        public int SeasonId { get; set; }
 
         public virtual Season Season { get; set; }
 
