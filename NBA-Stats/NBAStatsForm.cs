@@ -69,6 +69,18 @@ namespace NBA_Stats
                 });
             }
 
+            if (dbContext.Seasons.Count() == 0)
+            {
+                dbContext.Seasons.Add(new NBAStatistics.Models.Season
+                {
+                    SeasonId = "2016-17"
+                });
+                dbContext.Seasons.Add(new NBAStatistics.Models.Season
+                {
+                    SeasonId = "2015-16"
+                });
+            }
+
             dbContext.SaveChanges();
         }
 
@@ -481,7 +493,7 @@ namespace NBA_Stats
                             var coachIdsInMongoDb = collectionCoaches.Find(c => true)//conditionCoaches)
                                 .Project<Coach>(fieldsCoaches)
                                 .ToList()
-                                .Select(c => c.CoachId);                            
+                                .Select(c => c.CoachId);
 
                             foreach (var teamInfo in await Task.WhenAll(tasks))
                             {
