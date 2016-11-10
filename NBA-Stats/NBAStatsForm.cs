@@ -436,6 +436,10 @@ namespace NBA_Stats
                             seasonsToAddInMongoDb.Select(x => x.ToBsonDocument<Season>()), "Seasons");
                     }
 
+                    // store unique player and coach Id's to prevent duplicate store of data
+                    var playerIdsList = new HashSet<int>();
+                    var coachIdsList = new HashSet<string>();
+
                     foreach (var seasonId in seasonIdsFromXml)
                     {
                         var players = new HashSet<Player>();
@@ -477,7 +481,7 @@ namespace NBA_Stats
                             var coachIdsInMongoDb = collectionCoaches.Find(c => true)//conditionCoaches)
                                 .Project<Coach>(fieldsCoaches)
                                 .ToList()
-                                .Select(c => c.CoachId);
+                                .Select(c => c.CoachId);                            
 
                             foreach (var teamInfo in await Task.WhenAll(tasks))
                             {
@@ -498,7 +502,7 @@ namespace NBA_Stats
                                         {
                                             var playerId = (int)(long)row[12];
 
-                                            if (!playerIdsInMongoDb.Contains(playerId))
+                                            if (!playerIdsInMongoDb.Contains(playerId) && !playerIdsList.Contains(playerId))
                                             {
                                                 string uriString = $"http://stats.nba.com/stats/commonplayerinfo?PlayerID={playerId}";
 
@@ -540,6 +544,8 @@ namespace NBA_Stats
                                                 seasonPointsPerGame[seasonId] = (double)RandomProvider.Instance.Next(0, 5000) / 100;
                                                 seasonPointsPerGame["2015-16"] = (double)RandomProvider.Instance.Next(0, 5000) / 100;
 
+                                                playerIdsList.Add((int)(long)personId);
+
                                                 players.Add(new Player(
                                                     (int)(long)personId,
                                                     (string)firstName,
@@ -576,9 +582,9 @@ namespace NBA_Stats
                                     {
                                         foreach (var row in resultSet.RowSet)
                                         {
-                                            var coachId = row[2];
+                                            var coachId = (string)row[2];
 
-                                            if (!coachIdsInMongoDb.Contains((string)coachId))
+                                            if (!coachIdsInMongoDb.Contains((string)coachId) && !coachIdsList.Contains(coachId))
                                             {
                                                 var teamId = row[0];
                                                 var season = row[1];
@@ -592,10 +598,12 @@ namespace NBA_Stats
                                                 var school = row[9];
                                                 var sortSequence = row[10];
 
+                                                coachIdsList.Add(coachId);
+
                                                 coaches.Add(new Coach(
                                                     (int)(long)teamId,
                                                     (string)season,
-                                                    (string)coachId,
+                                                    coachId,
                                                     (string)firstName,
                                                     (string)lastName,
                                                     (string)coachName,
