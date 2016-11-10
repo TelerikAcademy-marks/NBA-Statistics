@@ -76,6 +76,7 @@
     <Compile Include="Models.Json\PlayerInfo.cs" />
     <Compile Include="Models.Json\PlayerInfoParameter.cs" />
     <Compile Include="Models.Json\Resultset.cs" />
+    <Compile Include="Models.Json\StandingsByDay.cs" />
     <Compile Include="Models.Json\TeamInfo.cs" />
     <Compile Include="Models.Json\TeamInfoParameter.cs" />
     <Compile Include="Player.cs" />

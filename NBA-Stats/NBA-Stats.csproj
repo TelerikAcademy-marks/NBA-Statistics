@@ -119,7 +119,6 @@
     <Compile Include="ConnectionProviders\SqliteDbConnectionProvider.cs" />
     <Compile Include="ConnectionProviders\SqlServerConectionProvider.cs" />
     <Compile Include="RandomProvider.cs" />
-    <Compile Include="StandingsByDay.cs" />
     <Compile Include="JsonHelpers.cs" />
     <Compile Include="NBAStatsForm.cs">
       <SubType>Form</SubType>
