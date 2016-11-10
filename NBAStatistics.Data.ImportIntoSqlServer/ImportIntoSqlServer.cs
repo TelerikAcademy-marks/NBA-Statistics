@@ -46,7 +46,7 @@ namespace NBAStatistics.Data.ImportIntoSqlServer
 
                     // If the directory already exists, this method does not create a new directory
                     DirectoryInfo di = Directory.CreateDirectory(directoryWithReports);
-                    CultureInfo cultureProvider = new CultureInfo("en-US");
+
                     using (ZipArchive archive = ZipFile.OpenRead(zipPath))
                     {
                         foreach (ZipArchiveEntry entry in archive.Entries)
@@ -55,7 +55,7 @@ namespace NBAStatistics.Data.ImportIntoSqlServer
                             var dateOfTheReport = DateTime.ParseExact(
                                 directoryName,
                                 "dd-MMM-yyyy",
-                                cultureProvider);
+                                CultureInfo.InvariantCulture);
 
                             var xlsFileName = entry.FullName.Substring(12);
                             var xlsPath = $"{directoryWithReports}{directoryName}_{xlsFileName}";
