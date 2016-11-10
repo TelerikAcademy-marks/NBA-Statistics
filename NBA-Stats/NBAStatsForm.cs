@@ -638,7 +638,7 @@ namespace NBA_Stats
 
         private async void btnImportDataIntoSqlServer_Click(object sender, EventArgs e)
         {
-            //this.btnImportDataIntoSqlServer.Enabled = false;
+            this.btnImportDataIntoSqlServer.Enabled = false;
 
             //const string User = "miro";
             //const string Pass = "1qazcde3";
